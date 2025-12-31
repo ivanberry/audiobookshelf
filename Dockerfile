@@ -53,7 +53,7 @@ RUN apk add --no-cache --update \
   tini \
   python3 \
   py3-pip && \
-  pip3 install --no-cache-dir yt-dlp
+  pip3 install --no-cache-dir --break-system-packages yt-dlp
 
 WORKDIR /app
 
