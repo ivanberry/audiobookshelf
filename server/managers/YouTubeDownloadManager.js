@@ -141,6 +141,13 @@ class YouTubeDownloadManager {
     return new Promise((resolve, reject) => {
       const args = [url, '--dump-json', '--no-warnings', '--no-playlist']
 
+      // Add cookies file if configured
+      const cookiesPath = process.env.YT_DLP_COOKIES_PATH
+      if (cookiesPath && fs.pathExistsSync(cookiesPath)) {
+        args.push('--cookies', cookiesPath)
+        Logger.debug(`[YouTubeDownloadManager] Using cookies file: ${cookiesPath}`)
+      }
+
       let stdout = ''
       let stderr = ''
 
@@ -366,6 +373,13 @@ class YouTubeDownloadManager {
         '--no-playlist', // Ensure single video download even if URL has playlist param
         '--newline' // Output progress on new lines for easier parsing
       ]
+
+      // Add cookies file if configured
+      const cookiesPath = process.env.YT_DLP_COOKIES_PATH
+      if (cookiesPath && fs.pathExistsSync(cookiesPath)) {
+        args.push('--cookies', cookiesPath)
+        Logger.debug(`[YouTubeDownloadManager] Using cookies file: ${cookiesPath}`)
+      }
 
       Logger.debug(`[YouTubeDownloadManager] Executing: yt-dlp ${args.join(' ')}`)
 

@@ -31,12 +31,20 @@ services:
       # 配置目录（必须在同一物理机器上）
       - ./audio/config:/config
 
+      # YouTube cookies 文件（用于需要登录的视频）
+      # 取消注释并修改路径以使用 cookies
+      # - ./cookies.txt:/cookies.txt:ro
+
     environment:
       # 时区设置
       - TZ=Asia/Shanghai
 
       # 可选：设置 yt-dlp 路径（通常不需要，因为已安装到系统路径）
       # - YT_DLP_PATH=/usr/bin/yt-dlp
+
+      # YouTube cookies 文件路径（需要与上面的 volume 挂载路径一致）
+      # 取消注释以启用 cookies 支持
+      # - YT_DLP_COOKIES_PATH=/cookies.txt
 
     restart: unless-stopped
 
