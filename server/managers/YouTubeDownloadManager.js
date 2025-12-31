@@ -1,6 +1,6 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
-const YTDlpWrap = require('yt-dlp-wrap').default
+const { spawn } = require('child_process')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -23,21 +23,6 @@ class YouTubeDownloadManager {
     this.downloadQueue = []
     /** @type {YouTubeDownload} */
     this.currentDownload = null
-
-    this.ytDlp = null
-    this.initYtDlp()
-  }
-
-  /**
-   * Initialize yt-dlp wrapper
-   */
-  async initYtDlp() {
-    try {
-      this.ytDlp = new YTDlpWrap()
-      Logger.info('[YouTubeDownloadManager] yt-dlp initialized successfully')
-    } catch (error) {
-      Logger.error('[YouTubeDownloadManager] Failed to initialize yt-dlp:', error)
-    }
   }
 
   /**
@@ -148,18 +133,22 @@ class YouTubeDownloadManager {
 
   /**
    * Get video/playlist info using yt-dlp
-   * Custom implementation to avoid URL escaping issues
+   * Uses native child_process to avoid URL escaping issues
    * @param {string} url - Video/Playlist URL
    * @returns {Promise<Object>}
    */
   async getVideoInfo(url) {
     return new Promise((resolve, reject) => {
-      const args = [url, '--dump-json', '--no-warnings']
+      const args = [url, '--dump-json', '--no-warnings', '--no-playlist']
 
       let stdout = ''
       let stderr = ''
 
-      const process = this.ytDlp.exec(args)
+      Logger.debug(`[YouTubeDownloadManager] Executing: yt-dlp ${args.join(' ')}`)
+
+      const process = spawn('yt-dlp', args, {
+        stdio: ['ignore', 'pipe', 'pipe']
+      })
 
       process.stdout.on('data', (data) => {
         stdout += data.toString()
@@ -177,15 +166,18 @@ class YouTubeDownloadManager {
             const info = JSON.parse(lines[0])
             resolve(info)
           } catch (error) {
+            Logger.error('[YouTubeDownloadManager] Failed to parse yt-dlp output:', error)
             reject(new Error(`Failed to parse yt-dlp output: ${error.message}`))
           }
         } else {
-          reject(new Error(`yt-dlp failed with code ${code}: ${stderr}`))
+          Logger.error(`[YouTubeDownloadManager] yt-dlp failed with code ${code}: ${stderr}`)
+          reject(new Error(`yt-dlp failed: ${stderr || 'Unknown error'}`))
         }
       })
 
       process.on('error', (error) => {
-        reject(error)
+        Logger.error('[YouTubeDownloadManager] Failed to spawn yt-dlp:', error)
+        reject(new Error(`Failed to execute yt-dlp: ${error.message}`))
       })
     })
   }
@@ -356,13 +348,14 @@ class YouTubeDownloadManager {
 
   /**
    * Download audio using yt-dlp
+   * Uses native child_process to avoid URL escaping issues
    * @param {YouTubeDownload} download
    */
   async downloadAudio(download) {
     return new Promise((resolve, reject) => {
       const outputTemplate = Path.join(download.targetDirectory, '%(title)s.%(ext)s')
 
-      const ytDlpArgs = [
+      const args = [
         download.url,
         '--extract-audio',
         '--audio-format', download.audioFormat,
@@ -371,15 +364,24 @@ class YouTubeDownloadManager {
         '--embed-thumbnail',
         '--output', outputTemplate,
         '--no-playlist', // Ensure single video download even if URL has playlist param
-        '--progress'
+        '--newline' // Output progress on new lines for easier parsing
       ]
 
-      const ytDlpProcess = this.ytDlp.exec(ytDlpArgs)
+      Logger.debug(`[YouTubeDownloadManager] Executing: yt-dlp ${args.join(' ')}`)
 
-      ytDlpProcess.on('progress', (progress) => {
+      const process = spawn('yt-dlp', args, {
+        stdio: ['ignore', 'pipe', 'pipe']
+      })
+
+      let stderr = ''
+
+      process.stdout.on('data', (data) => {
+        const output = data.toString()
         // Parse progress from yt-dlp output
-        if (progress.percent) {
-          download.setProgress(parseFloat(progress.percent))
+        const progressMatch = output.match(/(\d+\.?\d*)%/)
+        if (progressMatch) {
+          const percent = parseFloat(progressMatch[1])
+          download.setProgress(percent)
           SocketAuthority.emitter('youtube_download_progress', {
             id: download.id,
             progress: download.progress,
@@ -388,7 +390,11 @@ class YouTubeDownloadManager {
         }
       })
 
-      ytDlpProcess.on('close', async (code) => {
+      process.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+
+      process.on('close', async (code) => {
         if (code === 0) {
           // Download successful, find the downloaded file
           try {
@@ -415,12 +421,14 @@ class YouTubeDownloadManager {
             reject(error)
           }
         } else {
-          reject(new Error(`yt-dlp process exited with code ${code}`))
+          Logger.error(`[YouTubeDownloadManager] yt-dlp download failed: ${stderr}`)
+          reject(new Error(`yt-dlp process exited with code ${code}: ${stderr}`))
         }
       })
 
-      ytDlpProcess.on('error', (error) => {
-        reject(error)
+      process.on('error', (error) => {
+        Logger.error('[YouTubeDownloadManager] Failed to spawn yt-dlp for download:', error)
+        reject(new Error(`Failed to execute yt-dlp: ${error.message}`))
       })
     })
   }
