@@ -153,19 +153,19 @@ class YouTubeDownloadManager {
 
       Logger.debug(`[YouTubeDownloadManager] Executing: yt-dlp ${args.join(' ')}`)
 
-      const process = spawn('yt-dlp', args, {
+      const ytDlpProcess = spawn('yt-dlp', args, {
         stdio: ['ignore', 'pipe', 'pipe']
       })
 
-      process.stdout.on('data', (data) => {
+      ytDlpProcess.stdout.on('data', (data) => {
         stdout += data.toString()
       })
 
-      process.stderr.on('data', (data) => {
+      ytDlpProcess.stderr.on('data', (data) => {
         stderr += data.toString()
       })
 
-      process.on('close', (code) => {
+      ytDlpProcess.on('close', (code) => {
         if (code === 0) {
           try {
             // Parse the first line of JSON output
@@ -182,7 +182,7 @@ class YouTubeDownloadManager {
         }
       })
 
-      process.on('error', (error) => {
+      ytDlpProcess.on('error', (error) => {
         Logger.error('[YouTubeDownloadManager] Failed to spawn yt-dlp:', error)
         reject(new Error(`Failed to execute yt-dlp: ${error.message}`))
       })
@@ -383,13 +383,13 @@ class YouTubeDownloadManager {
 
       Logger.debug(`[YouTubeDownloadManager] Executing: yt-dlp ${args.join(' ')}`)
 
-      const process = spawn('yt-dlp', args, {
+      const ytDlpProcess = spawn('yt-dlp', args, {
         stdio: ['ignore', 'pipe', 'pipe']
       })
 
       let stderr = ''
 
-      process.stdout.on('data', (data) => {
+      ytDlpProcess.stdout.on('data', (data) => {
         const output = data.toString()
         // Parse progress from yt-dlp output
         const progressMatch = output.match(/(\d+\.?\d*)%/)
@@ -404,11 +404,11 @@ class YouTubeDownloadManager {
         }
       })
 
-      process.stderr.on('data', (data) => {
+      ytDlpProcess.stderr.on('data', (data) => {
         stderr += data.toString()
       })
 
-      process.on('close', async (code) => {
+      ytDlpProcess.on('close', async (code) => {
         if (code === 0) {
           // Download successful, find the downloaded file
           try {
@@ -440,7 +440,7 @@ class YouTubeDownloadManager {
         }
       })
 
-      process.on('error', (error) => {
+      ytDlpProcess.on('error', (error) => {
         Logger.error('[YouTubeDownloadManager] Failed to spawn yt-dlp for download:', error)
         reject(new Error(`Failed to execute yt-dlp: ${error.message}`))
       })
