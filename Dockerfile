@@ -46,11 +46,14 @@ FROM node:20-alpine
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
 
-# Install only runtime dependencies
+# Install only runtime dependencies including yt-dlp
 RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
-  tini
+  tini \
+  python3 \
+  py3-pip && \
+  pip3 install --no-cache-dir yt-dlp
 
 WORKDIR /app
 
