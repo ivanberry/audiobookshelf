@@ -1,0 +1,53 @@
+### DOCKER COMPOSE - 本地构建版本 ###
+# 用于构建支持 YouTube 下载功能的镜像
+services:
+  audiobookshelf:
+    # 从本地 Dockerfile 构建
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # 支持多平台构建（根据需要取消注释）
+      # platforms:
+      #   - linux/amd64
+      #   - linux/arm64
+      tags:
+        - audiobookshelf-youtube:latest
+        - audiobookshelf-youtube:${VERSION:-dev}
+
+    container_name: audiobookshelf-youtube
+
+    # ABS 运行在 80 端口，映射到主机 13378 端口
+    ports:
+      - "13378:80"
+
+    volumes:
+      # 媒体目录 - 根据实际路径修改
+      - ./audio/audiobooks:/audiobooks
+      - ./audio/podcasts:/podcasts
+
+      # 元数据目录
+      - ./audio/metadata:/metadata
+
+      # 配置目录（必须在同一物理机器上）
+      - ./audio/config:/config
+
+    environment:
+      # 时区设置
+      - TZ=Asia/Shanghai
+
+      # 可选：设置 yt-dlp 路径（通常不需要，因为已安装到系统路径）
+      # - YT_DLP_PATH=/usr/bin/yt-dlp
+
+    restart: unless-stopped
+
+    # 可选：以特定用户运行（根据需要取消注释并修改 UID/GID）
+    # user: "1000:1000"
+
+    # 可选：资源限制
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       memory: 512M
