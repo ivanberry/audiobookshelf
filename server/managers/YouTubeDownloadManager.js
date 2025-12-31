@@ -241,7 +241,7 @@ class YouTubeDownloadManager {
       // Step 1: Get video metadata
       Logger.info(`[YouTubeDownloadManager] Getting metadata for: ${download.url}`)
       download.setStatus('downloading')
-      task.setDescription(`Getting video information...`)
+      task.description = 'Getting video information...'
 
       const videoInfo = await this.ytDlp.getVideoInfo(download.url)
       download.setMetadata(videoInfo)
@@ -259,14 +259,14 @@ class YouTubeDownloadManager {
       await fs.ensureDir(download.targetDirectory)
 
       Logger.info(`[YouTubeDownloadManager] Downloading to: ${download.targetPath}`)
-      task.setDescription(`Downloading: ${download.title}`)
+      task.description = `Downloading: ${download.title}`
 
       // Step 4: Download audio using yt-dlp
       await this.downloadAudio(download)
 
       // Step 5: Download thumbnail as cover
       download.setStatus('processing')
-      task.setDescription(`Processing: ${download.title}`)
+      task.description = `Processing: ${download.title}`
 
       if (download.thumbnailUrl) {
         try {
@@ -289,7 +289,7 @@ class YouTubeDownloadManager {
 
       // Mark as completed
       download.setCompleted()
-      task.setDescription(`Completed: ${download.title}`)
+      task.description = `Completed: ${download.title}`
 
       Logger.info(`[YouTubeDownloadManager] Download completed successfully: ${download.title}`)
       return true
