@@ -147,13 +147,57 @@ class YouTubeDownloadManager {
   }
 
   /**
+   * Get video/playlist info using yt-dlp
+   * Custom implementation to avoid URL escaping issues
+   * @param {string} url - Video/Playlist URL
+   * @returns {Promise<Object>}
+   */
+  async getVideoInfo(url) {
+    return new Promise((resolve, reject) => {
+      const args = [url, '--dump-json', '--no-warnings']
+
+      let stdout = ''
+      let stderr = ''
+
+      const process = this.ytDlp.exec(args)
+
+      process.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+
+      process.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+
+      process.on('close', (code) => {
+        if (code === 0) {
+          try {
+            // Parse the first line of JSON output
+            const lines = stdout.trim().split('\n')
+            const info = JSON.parse(lines[0])
+            resolve(info)
+          } catch (error) {
+            reject(new Error(`Failed to parse yt-dlp output: ${error.message}`))
+          }
+        } else {
+          reject(new Error(`yt-dlp failed with code ${code}: ${stderr}`))
+        }
+      })
+
+      process.on('error', (error) => {
+        reject(error)
+      })
+    })
+  }
+
+  /**
    * Get playlist info using yt-dlp
    * @param {string} url - Playlist URL
    * @returns {Promise<Object>}
    */
   async getPlaylistInfo(url) {
     try {
-      const info = await this.ytDlp.getVideoInfo([url, '--flat-playlist'])
+      const info = await this.getVideoInfo(url)
       return info
     } catch (error) {
       Logger.error('[YouTubeDownloadManager] Failed to get playlist info:', error)
@@ -243,7 +287,7 @@ class YouTubeDownloadManager {
       download.setStatus('downloading')
       task.description = 'Getting video information...'
 
-      const videoInfo = await this.ytDlp.getVideoInfo(download.url)
+      const videoInfo = await this.getVideoInfo(download.url)
       download.setMetadata(videoInfo)
 
       Logger.info(`[YouTubeDownloadManager] Metadata retrieved: "${download.title}" by ${download.uploader}`)
