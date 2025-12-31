@@ -1,6 +1,6 @@
 # GitHub Actions 自动构建 Docker 镜像 - 完整设置指南
 
-本指南将帮助你在 **ivanberry/audiobookshelf** 仓库配置 GitHub Actions，实现自动构建包含 YouTube 下载功能的 Docker 镜像。
+本指南将帮助你在 **ivanberry/audiobookshelf** 仓库配置 GitHub Actions，实现自动构建包含自定义功能（YouTube 下载等）的 Docker 镜像。
 
 ---
 
@@ -10,7 +10,7 @@
 - ✅ 支持手动触发构建
 - ✅ 自动推送到 GitHub Container Registry (GHCR)
 - ✅ 支持多架构 (amd64, arm64)
-- ✅ 镜像名称: `ghcr.io/ivanberry/audiobookshelf-youtube`
+- ✅ 镜像名称: `ghcr.io/ivanberry/audiobookshelf`
 
 ---
 
@@ -49,7 +49,7 @@ GitHub Container Registry 需要特殊权限才能推送镜像。
 2. 点击 **Developer settings** → **Personal access tokens** → **Tokens (classic)**
 3. 点击 **Generate new token** → **Generate new token (classic)**
 4. 配置如下:
-   - **Note**: `GHCR Push Token for audiobookshelf-youtube`
+   - **Note**: `GHCR Push Token for audiobookshelf`
    - **Expiration**: 选择有效期（建议 1 年）
    - **Scopes**: 勾选以下权限
      - ✅ `write:packages` - 上传和发布包
@@ -154,7 +154,7 @@ git push origin master
 ✅ Login to GitHub Container Registry
 ✅ Build image
    - Building for linux/amd64, linux/arm64
-   - Pushing to ghcr.io/ivanberry/audiobookshelf-youtube:latest
+   - Pushing to ghcr.io/ivanberry/audiobookshelf:latest
 ✅ Move cache
 ```
 
@@ -166,7 +166,7 @@ git push origin master
 
 1. 访问你的仓库首页
 2. 点击右侧 **Packages** 链接
-3. 应该看到 `audiobookshelf-youtube` 包
+3. 应该看到 `audiobookshelf` 包
 
 或直接访问: https://github.com/ivanberry?tab=packages
 
@@ -190,7 +190,7 @@ git push origin master
 
 ```bash
 # 拉取镜像
-docker pull ghcr.io/ivanberry/audiobookshelf-youtube:latest
+docker pull ghcr.io/ivanberry/audiobookshelf:latest
 
 # 运行容器
 docker run -d \
@@ -201,7 +201,7 @@ docker run -d \
   -v $(pwd)/metadata:/metadata \
   -v $(pwd)/config:/config \
   -e TZ=Asia/Shanghai \
-  ghcr.io/ivanberry/audiobookshelf-youtube:latest
+  ghcr.io/ivanberry/audiobookshelf:latest
 ```
 
 ### 7.2 私有镜像（需要认证）
@@ -217,7 +217,7 @@ docker run -d \
 echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u ivanberry --password-stdin
 
 # 拉取镜像
-docker pull ghcr.io/ivanberry/audiobookshelf-youtube:latest
+docker pull ghcr.io/ivanberry/audiobookshelf:latest
 
 # 运行容器（同上）
 ```
@@ -345,7 +345,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/audiobookshelf-youtube
+            ghcr.io/${{ github.repository_owner }}/audiobookshelf
           tags: |
             type=edge,branch=master
             type=semver,pattern={{version}}
@@ -416,7 +416,7 @@ jobs:
 
 设置完成后，每次推送到 master 分支，GitHub Actions 都会自动构建包含 YouTube 下载功能的 Docker 镜像！
 
-**镜像地址：** `ghcr.io/ivanberry/audiobookshelf-youtube:latest`
+**镜像地址：** `ghcr.io/ivanberry/audiobookshelf:latest`
 
 ---
 

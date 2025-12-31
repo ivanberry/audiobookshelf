@@ -1,5 +1,5 @@
 ### DOCKER COMPOSE - 本地构建版本 ###
-# 用于构建支持 YouTube 下载功能的镜像
+# 用于构建支持自定义功能的 Audiobookshelf 镜像
 services:
   audiobookshelf:
     # 从本地 Dockerfile 构建
@@ -11,10 +11,10 @@ services:
       #   - linux/amd64
       #   - linux/arm64
       tags:
-        - audiobookshelf-youtube:latest
-        - audiobookshelf-youtube:${VERSION:-dev}
+        - ivanberry/audiobookshelf:latest
+        - ivanberry/audiobookshelf:${VERSION:-dev}
 
-    container_name: audiobookshelf-youtube
+    container_name: audiobookshelf
 
     # ABS 运行在 80 端口，映射到主机 13378 端口
     ports:

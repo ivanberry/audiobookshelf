@@ -1,14 +1,15 @@
-# Docker 构建指南 - YouTube 下载功能版本
+# Docker 构建指南 - 自定义功能版本
 
-本指南介绍如何构建和运行支持 YouTube 下载功能的 Audiobookshelf Docker 镜像。
+本指南介绍如何构建和运行包含自定义功能的 Audiobookshelf Docker 镜像。
 
-## 📋 新增功能
+## 📋 当前功能
 
 ✅ 支持从 YouTube 下载音频（使用 yt-dlp）
 ✅ 支持 YouTube 播放列表批量下载
 ✅ 自动提取元数据和封面
 ✅ MP3 格式输出，多种音质选择
 ✅ 管理员权限控制
+✅ 扩展性强，方便添加更多功能
 
 ---
 
@@ -21,7 +22,7 @@
 docker-compose -f docker-compose.build.yml build
 
 # 或者直接使用 docker build
-docker build -t audiobookshelf-youtube:latest .
+docker build -t audiobookshelf:latest .
 ```
 
 ### 2. 启动容器
@@ -73,18 +74,18 @@ GitHub Actions 会在以下情况自动构建：
 echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 # 拉取镜像
-docker pull ghcr.io/ivanberry/audiobookshelf-youtube:latest
+docker pull ghcr.io/ivanberry/audiobookshelf:latest
 
 # 使用拉取的镜像
 docker run -d \
-  --name audiobookshelf-youtube \
+  --name audiobookshelf \
   -p 13378:80 \
   -v $(pwd)/audio/audiobooks:/audiobooks \
   -v $(pwd)/audio/podcasts:/podcasts \
   -v $(pwd)/audio/metadata:/metadata \
   -v $(pwd)/audio/config:/config \
   -e TZ=Asia/Shanghai \
-  ghcr.io/ivanberry/audiobookshelf-youtube:latest
+  ghcr.io/ivanberry/audiobookshelf:latest
 ```
 
 ---
@@ -98,8 +99,8 @@ services:
       context: .              # 使用当前目录的 Dockerfile
       dockerfile: Dockerfile  # Dockerfile 路径
       tags:
-        - audiobookshelf-youtube:latest  # 镜像标签
-        - audiobookshelf-youtube:dev     # 开发版标签
+        - audiobookshelf:latest  # 镜像标签
+        - audiobookshelf:dev     # 开发版标签
 
     ports:
       - "13378:80"  # 外部端口:容器端口
@@ -156,7 +157,7 @@ deploy:
 
 ```bash
 # 进入容器
-docker exec -it audiobookshelf-youtube sh
+docker exec -it audiobookshelf sh
 
 # 检查 yt-dlp 版本
 yt-dlp --version
@@ -179,7 +180,7 @@ exit
 **解决:**
 ```bash
 # 进入容器
-docker exec -it audiobookshelf-youtube sh
+docker exec -it audiobookshelf sh
 
 # 手动安装 yt-dlp
 pip3 install --upgrade yt-dlp
@@ -210,7 +211,7 @@ user: "1000:1000"
 在容器中配置 yt-dlp 代理（如果需要）：
 ```bash
 # 进入容器
-docker exec -it audiobookshelf-youtube sh
+docker exec -it audiobookshelf sh
 
 # 编辑 yt-dlp 配置
 mkdir -p /config/.config/yt-dlp
@@ -233,7 +234,7 @@ docker buildx create --name multiarch --use
 # 构建并推送多平台镜像
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t audiobookshelf-youtube:latest \
+  -t audiobookshelf:latest \
   --push \
   .
 ```
@@ -262,14 +263,14 @@ docker-compose -f docker-compose.build.yml up -d
 
 ```bash
 # 拉取最新镜像
-docker pull ghcr.io/ivanberry/audiobookshelf-youtube:latest
+docker pull ghcr.io/ivanberry/audiobookshelf:latest
 
 # 停止旧容器
-docker stop audiobookshelf-youtube
-docker rm audiobookshelf-youtube
+docker stop audiobookshelf
+docker rm audiobookshelf
 
 # 启动新容器（使用新镜像）
-docker run -d --name audiobookshelf-youtube ...
+docker run -d --name audiobookshelf ...
 ```
 
 ---
